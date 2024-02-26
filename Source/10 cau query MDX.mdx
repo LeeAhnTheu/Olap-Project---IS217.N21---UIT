@@ -1,0 +1,63 @@
+﻿
+-- C1. Tìm lợi nhuận theo năm của nước Pháp (France)
+SELECT NON EMPTY { [MEASURES].[PROFIT] } ON COLUMNS, 
+NON EMPTY { ([DIM SHIPDATE].[SHIP YEAR].CHILDREN ) } ON ROWS 
+FROM [GLOBAL_SUPERSTORE]
+WHERE [DIM LOCATION].[COUNTRY].&[France]&[Central]&[EU];
+
+-- C2 Tìm loại khách hàng mang lại lợi nhuận cao nhất năm 2014
+SELECT NON EMPTY { [MEASURES].[PROFIT] } ON COLUMNS, 
+NON EMPTY { ([DIM CUSTOMER].[SEGMENT].[SEGMENT].ALLMEMBERS * [DIM SHIPDATE].[SHIP YEAR].[SHIP YEAR].ALLMEMBERS ) } ON ROWS 
+FROM [GLOBAL_SUPERSTORE] 
+WHERE ([DIM SHIPDATE].[HIERARCHY].[SHIP YEAR].&[2014] );
+
+-- C3 Tìm top 5 sản phẩm có lợi nhuận cao nhất
+SELECT { [MEASURES].[PROFIT], [MEASURES].[QUANTITY] } ON COLUMNS,
+{ TOPCOUNT({ [DIM PRODUCT].[PRODUCT NAME].CHILDREN}, 5, [MEASURES].[PROFIT]) } ON ROWS
+FROM [GLOBAL_SUPERSTORE];
+
+-- C4 Tìm chi phí vận chuyển theo từng năm, từng tháng của từng loại vận chuyển
+SELECT NON EMPTY {[MEASURES].[SHIPPING COST] * [DIM SHIPMODE].[SHIP MODE].Children} ON COLUMNS,
+{ DrillDownLevel([DIM ORDERDATE].[HIERARCHY].CHILDREN) } ON ROWS
+FROM [GLOBAL_SUPERSTORE];
+
+-- C5 Tìm sản phẩm được đặt với tổng số lượng lớn hơn 15 theo từng quốc gia
+Select	{[MEASURES].[QUANTITY]} ON COLUMNS,
+{GENERATE([DIM LOCATION].[COUNTRY].CHILDREN, 
+	FILTER ([DIM LOCATION].[COUNTRY].CURRENTMEMBER * [DIM PRODUCT].[PRODUCT NAME].CHILDREN, [Measures].[Quantity] > 15))} ON ROWS
+FROM [GLOBAL_SUPERSTORE];
+
+-- C6 Thống kê lợi nhuận, doanh thu, và phần trăm lợi nhuận từng loại sản phẩm, sắp xếp theo thứ tự phần trăm lợi nhuận giảm dần.
+WITH MEMBER [MEASURES].[PERCENTAGE PROFIT] AS ROUND([MEASURES].[PROFIT] / [MEASURES].[SALES], 5)
+SELECT NON EMPTY { [MEASURES].[PROFIT], [MEASURES].[SALES], [MEASURES].[PERCENTAGE PROFIT]} ON COLUMNS,
+{ ORDER([DIM PRODUCT].[CATEGORY].CHILDREN, [MEASURES].[PERCENTAGE PROFIT], DESC) } ON ROWS
+FROM [GLOBAL_SUPERSTORE];
+
+-- C7 Tìm tiểu loại sản phẩm có số đơn đặt hàng nhiều nhất và thấp nhất
+SELECT	{[MEASURES].[FACT COUNT]} on Columns,
+{UNION(TOPCOUNT({[DIM PRODUCT].[SUB- CATEGORY].CHILDREN}, 1, [MEASURES].[FACT COUNT]),
+		BOTTOMCOUNT(NONEMPTY([DIM PRODUCT].[SUB- CATEGORY].CHILDREN, [MEASURES].[QUANTITY]), 1, [MEASURES].[FACT COUNT]))} ON ROWS
+FROM [GLOBAL_SUPERSTORE];
+
+-- C8  Tìm 3 thành phố có lợi nhuận cao nhất của từng quốc gia
+SELECT {[MEASURES].[PROFIT]} ON COLUMNS,
+{GENERATE([DIM LOCATION].[COUNTRY].CHILDREN,
+	TOPCOUNT({[DIM LOCATION].[COUNTRY].CURRENTMEMBER * [DIM LOCATION].[City].Children}, 3, [MEASURES].[PROFIT]))} ON ROWS
+FROM [GLOBAL_SUPERSTORE];
+
+-- C9 Liệt kê những sản phẩm có doanh thu từ $1000 đến $10000
+SELECT	{[MEASURES].[SALES]} ON COLUMNS,
+{INTERSECT({FILTER([DIM PRODUCT].[PRODUCT NAME].CHILDREN , [MEASURES].[SALES] >= 1000)},
+			{FILTER([DIM PRODUCT].[PRODUCT NAME].CHILDREN , [MEASURES].[SALES] <= 10000)})} ON ROWS
+FROM [GLOBAL_SUPERSTORE];
+
+-- C10 Tìm số lượng đơn hàng bán ra theo từng năm cho từng thành phố, ngoại trừ thành phố Zurich và Zhuhai
+ SELECT NON EMPTY { [Measures].[FACT Count] } ON COLUMNS, 
+ NON EMPTY { ([DIM LOCATION].[Market].[Market].ALLMEMBERS * 
+				[DIM LOCATION].[Region].[Region].ALLMEMBERS * 
+					[DIM LOCATION].[Country].[Country].ALLMEMBERS ) } ON ROWS 
+ FROM [Global_SuperStore];
+
+
+
+
